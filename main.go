@@ -51,17 +51,25 @@ func nodesHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(nodes)
 }
 
+func nodesHandler2(w http.ResponseWriter, r *http.Request) {
+	nodes = append(nodes, Node{Name: "added", TimeSlice: 1.0, Cpu: 2.0, Mem: 3.0})
+	json.NewEncoder(w).Encode(nodes)
+}
+
 func todoHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("TODO")
 }
 
 func createNodeHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	var node Node
-	_ = json.NewDecoder(r.Body).Decode(&node)
+	node := Node{}
+	err := json.NewDecoder(r.Body).Decode(&node)
 	node.Name = params["nodename"]
-	nodes = append(nodes, node)
-	nodes = append(nodes, Node{Name: "worker1", TimeSlice: 1.0, Cpu: 2.0, Mem: 3.0})
+	if err != nil {
+		log.Print("error occurred while decoding node :: ", err)
+		return
+	}
+	nodes = append(nodes, Node{Name: node.Name, TimeSlice: node.TimeSlice, Cpu: node.Cpu, Mem: node.Mem})
 	json.NewEncoder(w).Encode(nodes)
 }
 
@@ -70,12 +78,12 @@ func AddRoutes(r *mux.Router) {
 	r.HandleFunc("/analytics/nodes/average/", todoHandler).Methods("GET")
 	r.HandleFunc("/analytics/processes/", todoHandler).Methods("GET")
 	r.HandleFunc("/analytics/processes/{processname}/", todoHandler).Methods("GET")
-	r.HandleFunc("/metrics/node/{nodename}/", createNodeHandler).Methods("POST")
+	r.HandleFunc("/metrics/node/{nodename}", createNodeHandler).Methods("POST")
 	r.HandleFunc("/metrics/nodes/{nodename}/process/{processname}/", todoHandler).Methods("POST")
 }
 
 func main() {
-	router := mux.NewRouter().StrictSlash(true)
+	router := mux.NewRouter()
 	// Adds a route prefix for v1 requests.
 	AddRoutes(router.PathPrefix("/v1").Subrouter())
 	// Print available routes to the terminal
