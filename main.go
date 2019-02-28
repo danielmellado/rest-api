@@ -31,28 +31,23 @@ const (
 
 //Defines structs
 type Node struct {
-	Name      string   `json:"name,omitempty`
-	TimeSlice float32  `json:"timeslice,omitempty`
-	Cpu       float32  `json:"cpu,omitempty"`
-	Mem       float32  `json:"mem,omitempty"`
+	Name      string   `json:"name`
+	TimeSlice float32  `json:"timeslice`
+	Cpu       float32  `json:"cpu"`
+	Mem       float32  `json:"mem"`
 	Process   *Process `json:"process,omitempty"`
 }
 
 type Process struct {
-	Name      string  `json:"name,omitempty`
-	TimeSlice float32 `json:"timeslice,omitempty"`
-	CpuUsed   float32 `json:"cpuused,omitempty"`
-	MemUsed   float32 `json:"memused,omitempty"`
+	Name      string  `json:"name`
+	TimeSlice float32 `json:"timeslice"`
+	CpuUsed   float32 `json:"cpuused"`
+	MemUsed   float32 `json:"memused"`
 }
 
 var nodes []Node
 
 func nodesHandler(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(nodes)
-}
-
-func nodesHandler2(w http.ResponseWriter, r *http.Request) {
-	nodes = append(nodes, Node{Name: "added", TimeSlice: 1.0, Cpu: 2.0, Mem: 3.0})
 	json.NewEncoder(w).Encode(nodes)
 }
 
@@ -69,7 +64,24 @@ func createNodeHandler(w http.ResponseWriter, r *http.Request) {
 		log.Print("error occurred while decoding node :: ", err)
 		return
 	}
-	nodes = append(nodes, Node{Name: node.Name, TimeSlice: node.TimeSlice, Cpu: node.Cpu, Mem: node.Mem})
+	nodes = append(nodes, Node{Name: node.Name, TimeSlice: node.TimeSlice, Cpu: node.Cpu, Mem: node.Mem, Process: node.Process})
+	json.NewEncoder(w).Encode(nodes)
+}
+
+func createProcessHandler(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	process := Process{}
+	err := json.NewDecoder(r.Body).Decode(&process)
+	process.Name = params["processname"]
+	if err != nil {
+		log.Print("error occurred while decoding process :: ", err)
+		return
+	}
+	for idx, node := range nodes {
+		if node.Name == params["nodename"] {
+			nodes[idx].Process = &process
+		}
+	}
 	json.NewEncoder(w).Encode(nodes)
 }
 
@@ -78,8 +90,8 @@ func AddRoutes(r *mux.Router) {
 	r.HandleFunc("/analytics/nodes/average/", todoHandler).Methods("GET")
 	r.HandleFunc("/analytics/processes/", todoHandler).Methods("GET")
 	r.HandleFunc("/analytics/processes/{processname}/", todoHandler).Methods("GET")
-	r.HandleFunc("/metrics/node/{nodename}", createNodeHandler).Methods("POST")
-	r.HandleFunc("/metrics/nodes/{nodename}/process/{processname}/", todoHandler).Methods("POST")
+	r.HandleFunc("/metrics/node/{nodename}/", createNodeHandler).Methods("POST")
+	r.HandleFunc("/metrics/nodes/{nodename}/process/{processname}/", createProcessHandler).Methods("POST")
 }
 
 func main() {
