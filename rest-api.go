@@ -93,8 +93,8 @@ func getProcessesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// AddRoutes creates the mux routes for the rest api
-func AddRoutes(r *mux.Router) {
+// addRoutes creates the mux routes for the rest api
+func addRoutes(r *mux.Router) {
 	r.HandleFunc("/nodes/", nodesHandler).Methods("GET")
 	r.HandleFunc("/analytics/nodes/average/", todoHandler).Methods("GET")
 	r.HandleFunc("/analytics/processes/", getProcessesHandler).Methods("GET")
@@ -106,7 +106,7 @@ func AddRoutes(r *mux.Router) {
 func main() {
 	router := mux.NewRouter()
 	// Adds a route prefix for v1 requests.
-	AddRoutes(router.PathPrefix("/v1").Subrouter())
+	addRoutes(router.PathPrefix("/v1").Subrouter())
 	// Print available routes to the terminal
 	router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		tmpl, _ := route.GetPathTemplate()
